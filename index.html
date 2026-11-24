@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>EcoCrossing 2030 - Ciudad Sostenible 3D</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- CABECERA -->
+  <header class="app-header">
+    <div class="top-bar">
+      <div class="brand-compact">
+        <div class="brand-logo"><i class="fa-solid fa-leaf"></i></div>
+        <div class="brand-info">
+          <div class="brand-title-row">
+            <h1>EcoCrossing 2030</h1>
+            <span class="badge-pill badge-time">
+              <i id="time-icon" class="fa-solid fa-sun"></i>
+              <span id="time-text">12:00</span>
+            </span>
+          </div>
+          <div class="brand-sub-mobile" id="island-rank">🌱 Aldea Inicial • Autoguardado activo</div>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <button id="btn-audio" onclick="toggleMusic()" class="btn-nav btn-audio-off" title="Música de fondo">
+          <i id="audio-icon" class="fa-solid fa-music"></i>
+          <span>Música</span>
+        </button>
+        <button id="btn-sfx" onclick="toggleSfx()" class="btn-nav btn-sfx-on" title="Efectos de sonido">
+          <i id="sfx-icon" class="fa-solid fa-volume-high"></i>
+        </button>
+        <button onclick="openAlbumModal()" class="btn-nav btn-album">
+          <i class="fa-solid fa-book-bookmark"></i>
+          <span><span id="hdr-ods-count">1</span>/17</span>
+        </button>
+        <button onclick="openMiniGameModal()" class="btn-nav btn-minigame">
+          <i class="fa-solid fa-recycle"></i>
+          <span>Reciclar</span>
+        </button>
+        <button onclick="takeIslandSnapshot()" class="btn-nav btn-photo" title="Descargar captura PNG de tu isla">
+          <i class="fa-solid fa-camera"></i>
+          <span>Foto</span>
+        </button>
+        <button onclick="openRestartModal()" class="btn-nav btn-reset-save" title="Reiniciar partida">
+          <i class="fa-solid fa-rotate-right"></i>
+          <span>Reiniciar</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 4 MÉTRICAS -->
+    <div class="stats-grid">
+      <div class="stat-box">
+        <span class="stat-icon">🪙</span>
+        <div class="stat-content">
+          <span class="stat-label">Monedas</span>
+          <span class="stat-val" id="stat-coins">420</span>
+          <span class="stat-sub stat-sub-coins" id="stat-income">+16/ciclo</span>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <span class="stat-icon">🌿</span>
+        <div class="stat-content">
+          <span class="stat-label">Ecología</span>
+          <span class="stat-val" id="stat-planet">50%</span>
+          <span class="stat-sub stat-sub-eco">Meta 80%</span>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <span class="stat-icon">🥰</span>
+        <div class="stat-content">
+          <span class="stat-label">Ánimo</span>
+          <span class="stat-val" id="stat-happy">60%</span>
+          <span class="stat-sub stat-sub-happy" id="stat-happy-note">🏠 4/8 plazas</span>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <span class="stat-icon">⚡</span>
+        <div class="stat-content">
+          <span class="stat-label">Energía</span>
+          <span class="stat-val" id="stat-energy">+0 MW</span>
+          <span class="stat-sub stat-sub-energy" id="stat-energy-detail">0 / 0 MW</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAPA 3D EN RELIEVE -->
+  <section class="map-wrapper" id="canvas-container">
+    <canvas id="game-canvas"></canvas>
+
+    <div class="overlay-banner">
+      <div id="overlay-pill" class="overlay-pill">
+        <span id="overlay-icon">🏝️</span>
+        <span id="overlay-text">Arrastra para explorar • Toca una parcela para construir</span>
+      </div>
+    </div>
+
+    <div id="selected-indicator" class="selected-indicator">
+      <span id="sel-ind-emoji" class="sel-ind-emoji">☀️</span>
+      <span id="sel-ind-text">Toca la isla para colocar</span>
+      <button onclick="clearSelection()" class="btn-clear-sel">✕</button>
+    </div>
+
+    <div class="zoom-controls">
+      <button onclick="adjustZoom(0.18)" class="btn-zoom" aria-label="Acercar">+</button>
+      <button onclick="adjustZoom(-0.18)" class="btn-zoom" aria-label="Alejar">−</button>
+      <button onclick="resetCamera()" class="btn-zoom" aria-label="Centrar"><i class="fa-solid fa-crosshairs btn-zoom-icon"></i></button>
+    </div>
+
+    <div class="map-tools">
+      <button id="btn-expand" onclick="expandTerritory(false)" title="Ampliar Isla (Solo con Monedas)" class="btn-tool btn-expand">
+        <i class="fa-solid fa-maximize"></i>
+        <span id="expand-cost-label">Ampliar 140🪙</span>
+      </button>
+      <button id="btn-inspect" onclick="clearSelection()" title="Inspeccionar" class="btn-tool active-inspect">
+        <i class="fa-solid fa-hand-pointer"></i>
+      </button>
+      <button id="btn-demolish" onclick="toggleDemolishMode()" title="Demoler (50%)" class="btn-tool">
+        <i class="fa-solid fa-trash-can"></i>
+      </button>
+    </div>
+  </section>
+
+  <!-- DOCK INFERIOR -->
+  <section class="mobile-dock">
+    <div class="dock-tabs">
+      <div class="tab-switcher">
+        <button id="tab-shop" onclick="switchMobileTab('shop')" class="btn-dock-tab active">
+          <i class="fa-solid fa-store tab-icon-shop"></i> Construir
+        </button>
+        <button id="tab-quest" onclick="switchMobileTab('quest')" class="btn-dock-tab">
+          <i class="fa-solid fa-comments tab-icon-quest"></i> Misión
+          <span id="quest-dot" class="quest-dot"></span>
+        </button>
+      </div>
+      <span id="shop-hint" class="shop-hint">Desliza el catálogo →</span>
+    </div>
+
+    <div id="view-shop">
+      <div class="filter-row">
+        <button onclick="filterShop('all', this)" class="btn-filter active">Todos (18)</button>
+        <button onclick="filterShop('housing', this)" class="btn-filter">🏠 Casas</button>
+        <button onclick="filterShop('energy', this)" class="btn-filter">⚡ Energía</button>
+        <button onclick="filterShop('nature', this)" class="btn-filter">🌿 Naturaleza</button>
+        <button onclick="filterShop('social', this)" class="btn-filter">🏥 Social</button>
+        <button onclick="filterShop('economy', this)" class="btn-filter">🤝 Economía</button>
+      </div>
+      <div class="shop-carousel" id="shop-list"></div>
+    </div>
+
+    <div id="view-quest" class="quest-panel-mobile">
+      <div class="quest-avatar" id="quest-avatar">🐼</div>
+      <div class="quest-body">
+        <div class="quest-header">
+          <h3 id="quest-author" class="quest-author">Alcalde Panda</h3>
+          <span class="badge-pill badge-quest-ods" id="quest-ods-badge">ODS 2</span>
+        </div>
+        <p class="quest-desc" id="quest-desc">Cargando petición...</p>
+        <div class="quest-progress-wrap">
+          <div id="quest-progress-bar" class="quest-progress-bar"></div>
+        </div>
+        <div class="quest-footer">
+          <span class="quest-progress-label" id="quest-progress-label">Progreso: 0/1</span>
+          <span class="quest-reward" id="quest-reward">+95 🪙</span>
+        </div>
+        <button id="btn-claim-quest" onclick="claimQuest()" class="btn-claim">
+          ¡Reclamar Recompensa! 🎉
+        </button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- MODAL ÁLBUM ODS -->
+<div id="album-modal" class="modal-overlay">
+  <div class="modal-box">
+    <button onclick="closeAlbumModal()" class="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+    <h2 class="modal-title-album">🏆 Álbum Agenda 2030</h2>
+    <p class="modal-subtitle">
+      Toca un cromo desbloqueado para leer su dato educativo. Récord reciclaje: <strong id="album-record">0</strong> pts.
+    </p>
+    <div class="album-grid" id="album-grid"></div>
+    <div class="ods-fact-box" id="ods-fact-box">
+      💡 <strong>¿Sabías que...?</strong> Selecciona un cromo de color para descubrir su impacto real.
+    </div>
+    <div class="album-footer">
+      <span class="album-progress-text">Progreso: <strong id="album-count" class="album-count-highlight">1 / 17</strong></span>
+      <div class="album-actions">
+        <button onclick="resetSavedGame()" class="btn-reset-save">Nueva Isla</button>
+        <button onclick="closeAlbumModal()" class="btn-nav btn-album">¡Seguir Jugando!</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MINIJUEGO RECICLAJE -->
+<div id="minigame-modal" class="modal-overlay">
+  <div class="modal-box teal-border">
+    <button onclick="closeMiniGameModal()" class="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+    <h2 class="modal-title-mg">♻️ Clasifica Residuos (ODS 12)</h2>
+    <p class="modal-subtitle">
+      Toca el contenedor correcto para ganar EcoCoins. Fallar resta 10 pts.
+    </p>
+
+    <div class="mg-hud">
+      <span>⏱️ Tiempo: <strong id="mg-timer" class="mg-timer-val">25s</strong></span>
+      <span>⭐ Puntos: <strong id="mg-score">0</strong></span>
+    </div>
+
+    <div class="mg-stage">
+      <div id="mg-item-emoji" class="mg-item-emoji">🍌</div>
+      <div id="mg-item-name" class="mg-item-name">Cáscara de plátano</div>
+      <div id="mg-feedback" class="mg-feedback"></div>
+    </div>
+
+    <div class="bins-grid">
+      <button onclick="answerMiniGame('org')" class="btn-bin bin-org"><span>🟤</span> Orgánico</button>
+      <button onclick="answerMiniGame('env')" class="btn-bin bin-env"><span>🟡</span> Envases</button>
+      <button onclick="answerMiniGame('pap')" class="btn-bin bin-pap"><span>🔵</span> Papel</button>
+      <button onclick="answerMiniGame('vid')" class="btn-bin bin-vid"><span>🟢</span> Vidrio</button>
+      <button onclick="answerMiniGame('res')" class="btn-bin bin-res"><span>⚫</span> Resto</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL INFORMATIVO / VICTORIA -->
+<div id="info-modal" class="modal-overlay">
+  <div class="modal-box gold-border">
+    <div id="info-modal-emoji" class="info-modal-emoji">🏆</div>
+    <h2 id="info-modal-title" class="info-modal-title">¡Título!</h2>
+    <p id="info-modal-body" class="info-modal-body"></p>
+    <button onclick="closeInfoModal()" class="btn-nav btn-info-ok">¡Genial!</button>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR REINICIO -->
+<div id="restart-modal" class="modal-overlay">
+  <div class="modal-box restart-border">
+    <button onclick="closeRestartModal()" class="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+    <div class="restart-emoji">🔄</div>
+    <h2 class="restart-title">¿Reiniciar la isla?</h2>
+    <p class="restart-body">
+      Se borrará la partida actual para empezar desde cero con una nueva estrategia. ¿Quieres continuar?
+    </p>
+    <div class="restart-actions">
+      <button onclick="closeRestartModal()" class="btn-nav btn-restart-cancel">Cancelar</button>
+      <button onclick="confirmRestartGame()" class="btn-nav btn-restart-confirm">Sí, reiniciar</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS MODULARES EN ORDEN DE DEPENDENCIA -->
+<script src="data.js"></script>
+<script src="audio.js"></script>
+<script src="renderer.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
